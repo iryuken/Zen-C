@@ -2,6 +2,7 @@
 #include "parser/parser.h"
 #include "plugins/plugin_manager.h"
 #include "repl/repl.h"
+#include "zen/zen_facts.h"
 #include "zprep.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -188,6 +189,7 @@ int main(int argc, char **argv)
     }
 
     init_builtins();
+    zen_init();
 
     // Initialize Plugin Manager
     zptr_plugin_mgr_init();
@@ -236,10 +238,6 @@ int main(int argc, char **argv)
         // Parse failed
         return 1;
     }
-
-    // Checking mode?
-    // analyze(root); // Implicit in parsing or separate step? Assuming separate
-    // if check_mode
 
     if (g_config.mode_check)
     {
@@ -297,11 +295,13 @@ int main(int argc, char **argv)
         char run_cmd[2048];
         sprintf(run_cmd, "./%s", outfile);
         ret = system(run_cmd);
-        // Clean up executable
         remove(outfile);
+        zptr_plugin_mgr_cleanup();
+        zen_trigger_global();
         return ret;
     }
 
     zptr_plugin_mgr_cleanup();
+    zen_trigger_global();
     return 0;
 }
