@@ -395,8 +395,11 @@ fn main() {
 Run code at compile-time to generate source or print messages.
 ```zc
 comptime {
-    print("Compiling...");
+    // Generate code at compile-time (written to stdout)
+    println "var build_date = \"2024-01-01\";";
 }
+
+println "Build Date: {build_date}";
 ```
 
 #### Embed
