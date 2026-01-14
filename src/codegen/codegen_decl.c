@@ -738,7 +738,7 @@ void emit_impl_vtables(ParserContext *ctx, FILE *out)
             while (m)
             {
                 const char *orig = parse_original_method_name(m->func.name);
-                fprintf(out, ".%s = (void(*)())%s_%s_%s", orig, strct, trait, orig);
+                fprintf(out, ".%s = (__typeof__(((%s_VTable*)0)->%s))%s_%s_%s", orig, trait, orig, strct, trait, orig);
                 if (m->next)
                 {
                     fprintf(out, ", ");
