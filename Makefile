@@ -41,7 +41,7 @@ OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRCS))
 # Installation paths
 PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
-MANDIR = $(PREFIX)/share/man/man1
+MANDIR = $(PREFIX)/share/man
 SHAREDIR = $(PREFIX)/share/zenc
 
 # Default target
@@ -62,21 +62,29 @@ $(OBJ_DIR)/%.o: %.c
 install: $(TARGET)
 	install -d $(BINDIR)
 	install -m 755 $(TARGET) $(BINDIR)/$(TARGET)
-	install -d $(MANDIR)
-	# Install man page if it exists
-	test -f man/zc.1 && install -m 644 man/zc.1 $(MANDIR)/zc.1 || true
+	
+	# Install man pages
+	install -d $(MANDIR)/man1 $(MANDIR)/man5 $(MANDIR)/man7
+	test -f man/zc.1 && install -m 644 man/zc.1 $(MANDIR)/man1/zc.1 || true
+	test -f man/zc.5 && install -m 644 man/zc.5 $(MANDIR)/man5/zc.5 || true
+	test -f man/zc.7 && install -m 644 man/zc.7 $(MANDIR)/man7/zc.7 || true
+	
 	# Install standard library
 	install -d $(SHAREDIR)
 	cp -r std $(SHAREDIR)/
 	@echo "=> Installed to $(BINDIR)/$(TARGET)"
+	@echo "=> Man pages installed to $(MANDIR)"
 	@echo "=> Standard library installed to $(SHAREDIR)/std"
 
 # Uninstall
 uninstall:
 	rm -f $(BINDIR)/$(TARGET)
-	rm -f $(MANDIR)/zc.1
+	rm -f $(MANDIR)/man1/zc.1
+	rm -f $(MANDIR)/man5/zc.5
+	rm -f $(MANDIR)/man7/zc.7
 	rm -rf $(SHAREDIR)
 	@echo "=> Uninstalled from $(BINDIR)/$(TARGET)"
+	@echo "=> Removed man pages from $(MANDIR)"
 	@echo "=> Removed $(SHAREDIR)"
 
 # Clean
