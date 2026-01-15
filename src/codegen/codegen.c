@@ -494,7 +494,14 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
 
         else
         {
-            fprintf(out, "%lluULL", (unsigned long long)node->literal.int_val);
+            if (node->literal.int_val > 9223372036854775807ULL)
+            {
+                fprintf(out, "%lluULL", (unsigned long long)node->literal.int_val);
+            }
+            else
+            {
+                fprintf(out, "%llu", (unsigned long long)node->literal.int_val);
+            }
         }
         break;
     case NODE_EXPR_CALL:
