@@ -1066,7 +1066,28 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
         {
             struct_name = g_current_impl_type;
         }
-        fprintf(out, "(struct %s){", struct_name);
+
+        int is_zen_struct = 0;
+        StructRef *sr = ctx->parsed_structs_list;
+        while (sr)
+        {
+            if (sr->node && sr->node->type == NODE_STRUCT &&
+                strcmp(sr->node->strct.name, struct_name) == 0)
+            {
+                is_zen_struct = 1;
+                break;
+            }
+            sr = sr->next;
+        }
+
+        if (is_zen_struct)
+        {
+            fprintf(out, "(struct %s){", struct_name);
+        }
+        else
+        {
+            fprintf(out, "(%s){", struct_name);
+        }
         ASTNode *f = node->struct_init.fields;
         while (f)
         {

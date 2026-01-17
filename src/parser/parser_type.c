@@ -141,9 +141,20 @@ Type *parse_type_base(ParserContext *ctx, Lexer *l)
             char *merged;
             if (mod)
             {
-                // Module-qualified type: Use module base name
-                merged = xmalloc(strlen(mod->base_name) + strlen(resolved_suffix) + 2);
-                sprintf(merged, "%s_%s", mod->base_name, resolved_suffix);
+                // Module-qualified type
+                if (mod->is_c_header)
+                {
+                    // C header: Use type name directly without prefix
+                    // To prevent name mangling, we might consider changing
+                    // this to also use the prefix.
+                    merged = xstrdup(resolved_suffix);
+                }
+                else
+                {
+                    // Zen module: Use module base name as prefix
+                    merged = xmalloc(strlen(mod->base_name) + strlen(resolved_suffix) + 2);
+                    sprintf(merged, "%s_%s", mod->base_name, resolved_suffix);
+                }
             }
             else
             {
