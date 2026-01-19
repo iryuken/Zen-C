@@ -87,4 +87,5 @@ struct Vec<T> {
 | Method | Signature | Description |
 | :--- | :--- | :--- |
 | **Free** | `free(self)` | Manually frees memory. Safe to call multiple times. |
+| **Forget** | `forget(self)` | Detaches the memory buffer from the vector (sets fields to 0). Prevents `Drop` from freeing memory. Useful for implementing move semantics or transferring ownership. |
 | **Trait** | `impl Drop for Vec` | Automatically calls `free()` when `Vec` goes out of scope. |

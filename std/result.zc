@@ -24,12 +24,18 @@ impl Result<T> {
         return !self.is_ok;
     }
 
+    fn forget(self) {
+        memset(&self.val, 0, sizeof(T));
+    }
+
     fn unwrap(self) -> T {
         if (!self.is_ok) {
             !"Panic: unwrap called on Err: {self.err}";
             exit(1);
         }
-        return self.val;
+        var v = self.val;
+        memset(&self.val, 0, sizeof(T));
+        return v;
     }
 
     fn expect(self, msg: char*) -> T {

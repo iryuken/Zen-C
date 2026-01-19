@@ -33,12 +33,12 @@ impl Path {
             var last = self.str.vec.get(base_len - 1);
             if (last != '/' && last != '\\') {
                 var sep = String::new("/");
-                new_s.append(sep);
+                new_s.append(&sep);
             }
         }
         
         var other_str = String::new(other);
-        new_s.append(other_str);
+        new_s.append(&other_str);
         
         return Path { str: new_s }; 
     }

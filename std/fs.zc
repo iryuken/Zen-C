@@ -50,7 +50,7 @@ struct Metadata {
     is_file: bool;
 }
 
-@derive(Eq)
+// @derive(Eq) - Removed to avoid double-free on String field
 struct DirEntry {
     name: String;
     is_dir: bool;
@@ -87,7 +87,11 @@ impl File {
         
         var s = String::new(buffer);
         free(buffer);
-        return Result<String>::Ok(s);
+        var res = Result<String>::Ok(s);
+        s.forget();
+        var ret = res;
+        res.forget();
+        return ret;
     }
     
     fn read_all(path: char*) -> Result<String> {
@@ -97,7 +101,9 @@ impl File {
         var f: File = res.unwrap();
         var s_res = f.read_to_string();
         f.close();
-        return s_res;
+        var ret = s_res;
+        s_res.forget();
+        return ret;
     }
     
     fn write_string(self, content: char*) -> Result<bool> {
@@ -157,6 +163,10 @@ impl File {
         
         free(name_buf);
         closedir(dir);
-        return Result< Vec<DirEntry> >::Ok(entries);
+        var res = Result< Vec<DirEntry> >::Ok(entries);
+        entries.forget();
+        var ret = res;
+        res.forget();
+        return ret;
     }
 }

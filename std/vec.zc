@@ -244,6 +244,13 @@ impl Vec<T> {
         return true;
     }
 
+    // Prevent Drop from freeing memory (simulates move)
+    fn forget(self) {
+        self.data = 0;
+        self.len = 0;
+        self.cap = 0;
+    }
+
     fn clone(self) -> Vec<T> {
         if (self.len == 0) {
             return Vec<T> { data: 0, len: 0, cap: 0 };

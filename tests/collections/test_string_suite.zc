@@ -10,7 +10,7 @@ test "test_string_methods" {
     var s1: String = String::from("Hello World");
     var sub: String = s1.substring(0, 5);
     var expected1: String = String::from("Hello");
-    if (sub.eq(expected1)) {
+    if (sub.eq(&expected1)) {
         println "  -> substring(0, 5): Passed";
     } else {
         assert(false, "substring(0, 5) failed");
@@ -19,7 +19,7 @@ test "test_string_methods" {
     // Substring middle
     var sub2: String = s1.substring(6, 5);
     var expected2: String = String::from("World");
-    if (sub2.eq(expected2)) {
+    if (sub2.eq(&expected2)) {
         println "  -> substring(6, 5): Passed";
     } else {
         assert(false, "substring(6, 5) failed");
@@ -67,9 +67,9 @@ test "test_string_methods" {
     // Append
     var s2: String = String::from("Hello");
     var s3: String = String::from(" World");
-    s2.append(s3);
+    s2.append(&s3);
     var expected6: String = String::from("Hello World");
-    if (s2.eq(expected6)) {
+    if (s2.eq(&expected6)) {
         println "  -> append(): Passed";
     } else {
         assert(false, "append() failed");
@@ -99,7 +99,7 @@ test "test_string_std_ops" {
     var s1 = String::from("Hello");
     var s2 = String::from(" World");
     
-    var s3 = s1 + s2; 
+    var s3 = s1.add(&s2); 
     
     print "Concatenated: ";
     s3.println();
@@ -107,7 +107,7 @@ test "test_string_std_ops" {
     assert(s3.length() == 11, "Length mismatch");
 
     var s4 = String::from("Hello World");
-    if (s3.eq(s4)) {
+    if (s3.eq(&s4)) {
         println "Equality check passed: Strings are identical.";
     } else {
         assert(false, "Equality check failed");

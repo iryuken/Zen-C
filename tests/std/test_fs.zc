@@ -13,19 +13,19 @@ test "test_std_fs_extended" {
     var p3 = Path::new("file.txt");
     var ext = p3.extension();
     assert(ext.is_some(), "Extension missed");
-    assert(strcmp(ext.unwrap().c_str(), ".txt") == 0, "Wrong extension");
+    assert(strcmp(ext.unwrap_ref().c_str(), ".txt") == 0, "Wrong extension");
     
     var p4 = Path::new("/usr/bin/gcc");
     var parent = p4.parent();
     assert(parent.is_some(), "Parent missed");
-    assert(strcmp(parent.unwrap().c_str(), "/usr/bin") == 0, "Wrong parent");
+    assert(strcmp(parent.unwrap_ref().c_str(), "/usr/bin") == 0, "Wrong parent");
     
     var fname = p4.file_name();
     assert(fname.is_some(), "Filename missed");
-    assert(strcmp(fname.unwrap().c_str(), "gcc") == 0, "Wrong filename");
+    assert(strcmp(fname.unwrap_ref().c_str(), "gcc") == 0, "Wrong filename");
     
     "Testing FS...";
-    var test_dir = "test_fs_sandbox";
+    var test_dir = "tests/test_fs_sandbox";
     
     if (File::exists(test_dir)) {
         File::remove_dir(test_dir); 
@@ -63,9 +63,8 @@ test "test_std_fs_extended" {
     assert(list_res.is_ok(), "Read dir failed");
     var entries = list_res.unwrap();
     var found_idx = -1;
-    for (var i: usize = 0; i < entries.length(); i = i + 1) {
-        var entry: DirEntry = entries.get(i);
-        if (strcmp(entry.name.c_str(), "hello.txt") == 0) {
+    for entry in &entries {
+        if (strcmp((*entry).name.c_str(), "hello.txt") == 0) {
             found_idx = 1;
             break;
         }

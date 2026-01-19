@@ -16,7 +16,11 @@ impl String {
             v.push(s[i]);
         }
         v.push(0);
-        return String { vec: v };
+        var d = v.data;
+        var l = v.len;
+        var c = v.cap;
+        v.forget();
+        return String { vec: Vec<char> { data: d, len: l, cap: c } };
     }
 
     fn from(s: char*) -> String {
@@ -30,23 +34,31 @@ impl String {
     fn destroy(self) {
         self.vec.free();
     }
+
+    fn forget(self) {
+        self.vec.forget();
+    }
     
-    fn append(self, other: String) {
+    fn append(self, other: String*) {
         self.vec.len = self.vec.len - 1;
-        var other_len = other.vec.len;
+        var other_len = (*other).vec.len;
         for (var i = 0; i < other_len; i = i + 1) {
-            self.vec.push(other.vec.get(i));
+            self.vec.push((*other).vec.get(i));
         }
     }
 
-    fn add(self, other: String) -> String {
+    fn add(self, other: String*) -> String {
         var new_s = String::from(self.c_str());
         new_s.append(other);
-        return new_s;
+        var d = new_s.vec.data;
+        var l = new_s.vec.len;
+        var c = new_s.vec.cap;
+        new_s.forget();
+        return String { vec: Vec<char> { data: d, len: l, cap: c } };
     }
 
-    fn eq(self, other: String) -> bool {
-        return strcmp(self.c_str(), other.c_str()) == 0;
+    fn eq(self, other: String*) -> bool {
+        return strcmp(self.c_str(), (*other).c_str()) == 0;
     }
 
     fn length(self) -> usize {
@@ -66,7 +78,11 @@ impl String {
              v.push(self.vec.get(start + i));
         }
         v.push(0);
-        return String { vec: v };
+        var d = v.data;
+        var l = v.len;
+        var c = v.cap;
+        v.forget();
+        return String { vec: Vec<char> { data: d, len: l, cap: c } };
     }
 
     fn find(self, target: char) -> Option<usize> {

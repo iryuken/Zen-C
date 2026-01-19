@@ -23,12 +23,26 @@ impl Option<T> {
         return !self.is_some;
     }
 
+    fn forget(self) {
+        memset(&self.val, 0, sizeof(T));
+    }
+
     fn unwrap(self) -> T {
         if (!self.is_some) {
             !"Panic: unwrap called on None";
             exit(1);
         }
-        return self.val;
+        var v = self.val;
+        memset(&self.val, 0, sizeof(T));
+        return v;
+    }
+
+    fn unwrap_ref(self) -> T* {
+        if (!self.is_some) {
+            !"Panic: unwrap_ref called on None";
+            exit(1);
+        }
+        return &self.val;
     }
     
     fn unwrap_or(self, def_val: T) -> T {
