@@ -3305,7 +3305,7 @@ char *run_comptime_block(ParserContext *ctx, Lexer *l)
             ASTNode *fn = ref->node;
             if (fn && fn->type == NODE_FUNCTION && fn->func.is_comptime)
             {
-                emit_func_signature(f, fn, NULL);
+                emit_func_signature(ctx, f, fn, NULL);
                 fprintf(f, ";\n");
                 codegen_node_single(ctx, fn, f);
             }
