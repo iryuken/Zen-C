@@ -64,6 +64,18 @@ void emit_c_decl(FILE *out, const char *type_str, const char *name)
     }
     else if (generic && (!bracket || generic < bracket))
     {
+        // Special case: Async<T> should NOT be mangled to Async_T
+        // because it compiles to the opaque struct 'Async' (defined in codegen_decl)
+        if (strncmp(type_str, "Async<", 6) == 0)
+        {
+            fprintf(out, "Async %s", name);
+            if (bracket)
+            {
+                fprintf(out, "%s", bracket);
+            }
+            return;
+        }
+
         char *gt = strchr(generic, '>');
         if (gt)
         {
