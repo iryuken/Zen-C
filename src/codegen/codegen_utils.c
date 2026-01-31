@@ -41,7 +41,7 @@ char *strip_template_suffix(const char *name)
 }
 
 // Helper to emit C declaration (handle arrays, function pointers correctly)
-void emit_c_decl(FILE *out, const char *type_str, const char *name)
+void emit_c_decl(ParserContext *ctx, FILE *out, const char *type_str, const char *name)
 {
     char *bracket = strchr(type_str, '[');
     char *generic = strchr(type_str, '<');
@@ -64,40 +64,38 @@ void emit_c_decl(FILE *out, const char *type_str, const char *name)
     }
     else if (generic && (!bracket || generic < bracket))
     {
-        // Special case: Async<T> should NOT be mangled to Async_T
-        // because it compiles to the opaque struct 'Async' (defined in codegen_decl)
-        if (strncmp(type_str, "Async<", 6) == 0)
-        {
-            fprintf(out, "Async %s", name);
-            if (bracket)
-            {
-                fprintf(out, "%s", bracket);
-            }
-            return;
-        }
-
+        char mangled_candidate[256];
         char *gt = strchr(generic, '>');
+        int success = 0;
+
         if (gt)
         {
             int base_len = generic - type_str;
             int arg_len = gt - generic - 1;
 
-            fprintf(out, "%.*s_%.*s %s", base_len, type_str, arg_len, generic + 1, name);
-
-            if (bracket)
+            // Limit check
+            if (base_len + arg_len + 2 < 256)
             {
-                fprintf(out, "%s", bracket);
+                snprintf(mangled_candidate, 256, "%.*s_%.*s", base_len, type_str, arg_len,
+                         generic + 1);
+
+                if (find_struct_def_codegen(ctx, mangled_candidate))
+                {
+                    fprintf(out, "%s %s", mangled_candidate, name);
+                    success = 1;
+                }
             }
         }
-        else
+
+        if (!success)
         {
             int base_len = generic - type_str;
             fprintf(out, "%.*s %s", base_len, type_str, name);
+        }
 
-            if (bracket)
-            {
-                fprintf(out, "%s", bracket);
-            }
+        if (bracket)
+        {
+            fprintf(out, "%s", bracket);
         }
     }
     else if (bracket)
@@ -114,8 +112,7 @@ void emit_c_decl(FILE *out, const char *type_str, const char *name)
 // Helper to emit variable declarations with array types.
 void emit_var_decl_type(ParserContext *ctx, FILE *out, const char *type_str, const char *var_name)
 {
-    (void)ctx;
-    emit_c_decl(out, type_str, var_name);
+    emit_c_decl(ctx, out, type_str, var_name);
 }
 
 // Find struct definition
@@ -671,7 +668,7 @@ char *codegen_type_to_string(Type *t)
 }
 
 // Emit function signature using Type info for correct C codegen
-void emit_func_signature(FILE *out, ASTNode *func, const char *name_override)
+void emit_func_signature(ParserContext *ctx, FILE *out, ASTNode *func, const char *name_override)
 {
     if (!func || func->type != NODE_FUNCTION)
     {
@@ -763,7 +760,7 @@ void emit_func_signature(FILE *out, ASTNode *func, const char *name_override)
             }
 
             // check if array type
-            emit_c_decl(out, type_str, name);
+            emit_c_decl(ctx, out, type_str, name);
             free(type_str);
         }
         if (func->func.is_varargs)
