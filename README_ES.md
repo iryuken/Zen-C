@@ -475,9 +475,9 @@ match val {
 
 // Desestructuración de Enums
 match shape {
-    Shape::Circle(r)   => println "Radio: {r}",
-    Shape::Rect(w, h)  => println "Área: {w*h}",
-    Shape::Point       => println "Punto"
+    Shape::Circle(r)   => { println "Radio: {r}" },
+    Shape::Rect(w, h)  => { println "Área: {w*h}" },
+    Shape::Point       => { println "Punto" },
 }
 ```
 

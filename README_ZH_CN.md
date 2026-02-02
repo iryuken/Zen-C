@@ -475,9 +475,9 @@ match val {
 
 // 解构枚举
 match shape {
-    Shape::Circle(r)   => println "半径: {r}",
-    Shape::Rect(w, h)  => println "面积: {w*h}",
-    Shape::Point       => println "点"
+    Shape::Circle(r)   => { println "半径: {r}" },
+    Shape::Rect(w, h)  => { println "面积: {w*h}" },
+    Shape::Point       => { println "点" },
 }
 ```
 
