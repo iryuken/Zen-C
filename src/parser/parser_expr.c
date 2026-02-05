@@ -934,7 +934,7 @@ ASTNode *parse_lambda(ParserContext *ctx, Lexer *l)
 }
 
 // Helper to create AST for f-string content.
-static ASTNode *create_fstring_block(ParserContext *ctx, const char *content)
+static ASTNode *create_fstring_block(ParserContext *ctx, Token parent_token, char *content, int len)
 {
     ASTNode *block = ast_create(NODE_BLOCK);
     block->type_info = type_new(TYPE_STRING);
@@ -959,42 +959,39 @@ static ASTNode *create_fstring_block(ParserContext *ctx, const char *content)
     tail->next = decl_t;
     tail = decl_t;
 
-    const char *cur = content;
-    while (*cur)
-    {
-        // Handle escape }} first - output literal } and skip
-        if (cur[0] == '}' && cur[1] == '}')
-        {
-            ASTNode *cat = ast_create(NODE_RAW_STMT);
-            cat->raw_stmt.content = xstrdup("strcat(_b, \"}\");");
-            tail->next = cat;
-            tail = cat;
-            cur += 2;
-            continue;
-        }
+    char *cur = content;
+    char *end = content + len;
 
+    while (cur < end)
+    {
         char *brace = strchr(cur, '{');
-        // Also find }} in the remaining text to handle before it
+        // Check for double brace }} first
         char *dbl_close = strstr(cur, "}}");
 
-        // If }} comes before next { or no {, handle text up to }}
         if (dbl_close && (!brace || dbl_close < brace))
         {
-            // Output text before }}
+            // Check boundary
+            if (dbl_close >= end)
+            {
+                dbl_close = NULL;
+            }
+        }
+
+        if (dbl_close && (!brace || dbl_close < brace))
+        {
             if (dbl_close > cur)
             {
-                int len = dbl_close - cur;
-                char *txt = xmalloc(len + 1);
-                strncpy(txt, cur, len);
-                txt[len] = 0;
+                int seg_len = dbl_close - cur;
                 ASTNode *cat = ast_create(NODE_RAW_STMT);
-                cat->raw_stmt.content = xmalloc(len + 20);
+                cat->raw_stmt.content = xmalloc(seg_len + 32);
+                char *txt = xmalloc(seg_len + 1);
+                strncpy(txt, cur, seg_len);
+                txt[seg_len] = 0;
                 sprintf(cat->raw_stmt.content, "strcat(_b, \"%s\");", txt);
                 tail->next = cat;
                 tail = cat;
                 free(txt);
             }
-            // Output escaped }
             ASTNode *cat = ast_create(NODE_RAW_STMT);
             cat->raw_stmt.content = xstrdup("strcat(_b, \"}\");");
             tail->next = cat;
@@ -1003,35 +1000,39 @@ static ASTNode *create_fstring_block(ParserContext *ctx, const char *content)
             continue;
         }
 
-        if (!brace)
+        if (!brace || brace >= end)
         {
-            if (strlen(cur) > 0)
+            if (cur < end)
             {
+                int seg_len = end - cur;
                 ASTNode *cat = ast_create(NODE_RAW_STMT);
-                cat->raw_stmt.content = xmalloc(strlen(cur) + 20);
-                sprintf(cat->raw_stmt.content, "strcat(_b, \"%s\");", cur);
+                cat->raw_stmt.content = xmalloc(seg_len + 32);
+                char *txt = xmalloc(seg_len + 1);
+                strncpy(txt, cur, seg_len);
+                txt[seg_len] = 0;
+                sprintf(cat->raw_stmt.content, "strcat(_b, \"%s\");", txt);
                 tail->next = cat;
                 tail = cat;
+                free(txt);
             }
             break;
         }
 
         if (brace > cur)
         {
-            int len = brace - cur;
-            char *txt = xmalloc(len + 1);
-            strncpy(txt, cur, len);
-            txt[len] = 0;
+            int seg_len = brace - cur;
             ASTNode *cat = ast_create(NODE_RAW_STMT);
-            cat->raw_stmt.content = xmalloc(len + 20);
+            cat->raw_stmt.content = xmalloc(seg_len + 32);
+            char *txt = xmalloc(seg_len + 1);
+            strncpy(txt, cur, seg_len);
+            txt[seg_len] = 0;
             sprintf(cat->raw_stmt.content, "strcat(_b, \"%s\");", txt);
             tail->next = cat;
             tail = cat;
             free(txt);
         }
 
-        // Handle escape {{
-        if (brace[1] == '{')
+        if (brace + 1 < end && brace[1] == '{')
         {
             ASTNode *cat = ast_create(NODE_RAW_STMT);
             cat->raw_stmt.content = xstrdup("strcat(_b, \"{\");");
@@ -1042,9 +1043,9 @@ static ASTNode *create_fstring_block(ParserContext *ctx, const char *content)
         }
 
         char *end_brace = strchr(brace, '}');
-        if (!end_brace)
+        if (!end_brace || end_brace >= end)
         {
-            break;
+            zpanic_at(parent_token, "Unclosed f-string brace");
         }
 
         char *colon = NULL;
@@ -1074,32 +1075,57 @@ static ASTNode *create_fstring_block(ParserContext *ctx, const char *content)
             p++;
         }
 
-        char *expr_str;
-        char *fmt = NULL;
+        char *expr_start = brace + 1;
+        // char *expr_end = colon ? colon : end_brace;
 
-        if (colon && colon < end_brace)
+        Lexer sub_l;
+        lexer_init(&sub_l, expr_start);
+
+        // Sync line info
+        sub_l.line = parent_token.line;
+        const char *last_nl = NULL;
+        for (const char *c = parent_token.start; c < expr_start; c++)
         {
-            int expr_len = colon - (brace + 1);
-            expr_str = xmalloc(expr_len + 1);
-            strncpy(expr_str, brace + 1, expr_len);
-            expr_str[expr_len] = 0;
+            if (*c == '\n')
+            {
+                sub_l.line++;
+                last_nl = c;
+            }
+        }
 
+        if (last_nl)
+        {
+            sub_l.col = (int)(expr_start - last_nl);
+        }
+        else
+        {
+            sub_l.col = parent_token.col + (int)(expr_start - parent_token.start);
+        }
+
+        int start_line = sub_l.line;
+        int start_col = sub_l.col;
+
+        ASTNode *expr_node = parse_expression(ctx, &sub_l);
+
+        // Check for leftover tokens.
+        Token next = lexer_peek(&sub_l);
+        if (next.type != TOK_RBRACE && next.type != TOK_COLON)
+        {
+            char err_msg[256];
+            snprintf(err_msg, sizeof(err_msg),
+                     "Invalid expression in f-string: expected '}' or ':', found token '%s'",
+                     next.start);
+            zpanic_at(next, err_msg);
+        }
+
+        char *fmt = NULL;
+        if (colon)
+        {
             int fmt_len = end_brace - (colon + 1);
             fmt = xmalloc(fmt_len + 1);
             strncpy(fmt, colon + 1, fmt_len);
             fmt[fmt_len] = 0;
         }
-        else
-        {
-            int expr_len = end_brace - (brace + 1);
-            expr_str = xmalloc(expr_len + 1);
-            strncpy(expr_str, brace + 1, expr_len);
-            expr_str[expr_len] = 0;
-        }
-
-        Lexer sub_l;
-        lexer_init(&sub_l, expr_str);
-        ASTNode *expr_node = parse_expression(ctx, &sub_l);
 
         if (expr_node && expr_node->type == NODE_EXPR_VAR)
         {
@@ -1130,13 +1156,16 @@ static ASTNode *create_fstring_block(ParserContext *ctx, const char *content)
         }
         else
         {
-            // _z_str(expr)
             ASTNode *call_macro = ast_create(NODE_EXPR_CALL);
             ASTNode *macro_callee = ast_create(NODE_EXPR_VAR);
             macro_callee->var_ref.name = xstrdup("_z_str");
             call_macro->call.callee = macro_callee;
+
+            // Re-parse for macro argument
             Lexer l2;
-            lexer_init(&l2, expr_str);
+            lexer_init(&l2, expr_start);
+            l2.line = start_line;
+            l2.col = start_col;
             ASTNode *expr_copy = parse_expression(ctx, &l2);
 
             call_macro->call.args = expr_copy;
@@ -1157,14 +1186,12 @@ static ASTNode *create_fstring_block(ParserContext *ctx, const char *content)
         tail = cat_t;
 
         cur = end_brace + 1;
-        free(expr_str);
         if (fmt)
         {
             free(fmt);
         }
     }
 
-    // Return _b
     ASTNode *ret_b = ast_create(NODE_RAW_STMT);
     ret_b->raw_stmt.content = xstrdup("_b;");
     tail->next = ret_b;
@@ -1172,6 +1199,28 @@ static ASTNode *create_fstring_block(ParserContext *ctx, const char *content)
 
     block->block.statements = head;
     return block;
+}
+
+// Check if the suffix is a valid integer suffix
+static int is_valid_int_suffix(const char *s)
+{
+    if (!s || !*s)
+    {
+        return 1;
+    }
+    // Standard and Zen C suffixes
+    const char *valid[] = {"u",   "U",   "l",   "L",   "ul",    "UL",  "uL",  "Ul",  "lu",
+                           "LU",  "lU",  "Lu",  "ll",  "LL",    "ull", "ULL", "uLL", "Ull",
+                           "llu", "LLu", "lLu", "llU", "u8",    "u16", "u32", "u64", "usize",
+                           "i8",  "i16", "i32", "i64", "isize", NULL};
+    for (int i = 0; valid[i]; i++)
+    {
+        if (strcmp(s, valid[i]) == 0)
+        {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 // Parse integer literal (decimal, hex, binary)
@@ -1183,14 +1232,28 @@ static ASTNode *parse_int_literal(Token t)
     node->type_info = type_new(TYPE_INT);
     char *s = token_strdup(t);
     unsigned long long val;
+    char *endptr = NULL;
+
     if (t.len > 2 && s[0] == '0' && s[1] == 'b')
     {
-        val = strtoull(s + 2, NULL, 2);
+        val = strtoull(s + 2, &endptr, 2);
     }
     else
     {
-        val = strtoull(s, NULL, 0);
+        val = strtoull(s, &endptr, 0);
     }
+
+    // Validate suffix
+    if (endptr && *endptr)
+    {
+        if (!is_valid_int_suffix(endptr))
+        {
+            char err[256];
+            snprintf(err, sizeof(err), "Invalid integer literal suffix: '%s'", endptr);
+            zpanic_at(t, err);
+        }
+    }
+
     node->literal.int_val = val;
     free(s);
     return node;
@@ -1223,12 +1286,9 @@ static ASTNode *parse_string_literal(ParserContext *ctx, Token t)
 
     if (has_interpolation)
     {
-
-        char *inner = xmalloc(t.len);
-        strncpy(inner, t.start + 1, t.len - 2);
-        inner[t.len - 2] = 0;
-        ASTNode *node = create_fstring_block(ctx, inner);
-        free(inner);
+        // Use in-place parsing to preserve source location
+        // No need to null terminate, create_fstring_block takes length
+        ASTNode *node = create_fstring_block(ctx, t, (char *)t.start + 1, t.len - 2);
         return node;
     }
 
@@ -1245,11 +1305,8 @@ static ASTNode *parse_string_literal(ParserContext *ctx, Token t)
 // Parse f-string literal
 static ASTNode *parse_fstring_literal(ParserContext *ctx, Token t)
 {
-    char *inner = xmalloc(t.len);
-    strncpy(inner, t.start + 2, t.len - 3);
-    inner[t.len - 3] = 0;
-    ASTNode *node = create_fstring_block(ctx, inner);
-    free(inner);
+    // Note: f"..." -> start+2
+    ASTNode *node = create_fstring_block(ctx, t, (char *)t.start + 2, t.len - 3);
     return node;
 }
 

@@ -1,6 +1,6 @@
 
 comptime {
-    printf("fn generated_func() {\n");
+    printf("fn generated_func() {{\n");
     printf("    println \"  I was generated at compile time!\";\n");
     printf("}\n");
 }
