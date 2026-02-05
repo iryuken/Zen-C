@@ -361,9 +361,8 @@ static int has_triggered = 0;
 
 void zen_init(void)
 {
-    struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    srand(ts.tv_nsec ^ getpid());
+    // Seed random with current time
+    srand((unsigned int)(z_get_time() * 1000.0) ^ getpid());
 }
 
 // Global helper to print.

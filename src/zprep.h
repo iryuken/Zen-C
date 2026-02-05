@@ -254,4 +254,19 @@ struct ParserContext;
  */
 void scan_build_directives(struct ParserContext *ctx, const char *src);
 
+/**
+ * @brief Get monotonic time in seconds (high precision).
+ */
+double z_get_monotonic_time(void);
+
+/**
+ * @brief Get wall clock time in seconds.
+ */
+double z_get_time(void);
+
+/**
+ * @brief Setup terminal (enable ANSI colors on Windows).
+ */
+void z_setup_terminal(void);
+
 #endif
