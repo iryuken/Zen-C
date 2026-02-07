@@ -313,6 +313,97 @@ void zpanic_with_suggestion(Token t, const char *msg, const char *suggestion)
     exit(1);
 }
 
+void zpanic_with_hints(Token t, const char *msg, const char *const *hints)
+{
+    if (g_config.json_output)
+    {
+        char combined_hints[4096] = {0};
+        if (hints)
+        {
+            const char *const *h = hints;
+            while (*h)
+            {
+                if (combined_hints[0])
+                {
+                    strncat(combined_hints, "\n", sizeof(combined_hints) - 1);
+                }
+                strncat(combined_hints, *h, sizeof(combined_hints) - strlen(combined_hints) - 1);
+                h++;
+            }
+        }
+        emit_json("error", t, msg, combined_hints[0] ? combined_hints : NULL);
+
+        if (g_parser_ctx && g_parser_ctx->is_fault_tolerant && g_parser_ctx->on_error)
+        {
+            char full_msg[4096];
+            snprintf(full_msg, sizeof(full_msg), "%s\n%s", msg, combined_hints);
+            g_parser_ctx->on_error(g_parser_ctx->error_callback_data, t, full_msg);
+            return;
+        }
+        exit(1);
+    }
+
+    // Header.
+    fprintf(stderr, COLOR_RED "error: " COLOR_RESET COLOR_BOLD "%s" COLOR_RESET "\n", msg);
+
+    // Location.
+    fprintf(stderr, COLOR_BLUE "  --> " COLOR_RESET "%s:%d:%d\n", g_current_filename, t.line,
+            t.col);
+
+    // Context.
+    const char *line_start = t.start - (t.col - 1);
+    const char *line_end = t.start;
+    while (*line_end && *line_end != '\n')
+    {
+        line_end++;
+    }
+    int line_len = line_end - line_start;
+
+    fprintf(stderr, COLOR_BLUE "   |\n" COLOR_RESET);
+    fprintf(stderr, COLOR_BLUE "%-3d| " COLOR_RESET "%.*s\n", t.line, line_len, line_start);
+    fprintf(stderr, COLOR_BLUE "   | " COLOR_RESET);
+    for (int i = 0; i < t.col - 1; i++)
+    {
+        fprintf(stderr, " ");
+    }
+    fprintf(stderr, COLOR_RED "^ here" COLOR_RESET "\n");
+
+    // Hints.
+    if (hints)
+    {
+        const char *const *h = hints;
+        while (*h)
+        {
+            fprintf(stderr, COLOR_BLUE "   |\n" COLOR_RESET);
+            fprintf(stderr, COLOR_CYAN "   = help: " COLOR_RESET "%s\n", *h);
+            h++;
+        }
+    }
+
+    if (g_parser_ctx && g_parser_ctx->is_fault_tolerant && g_parser_ctx->on_error)
+    {
+        // Construct error message buffer
+        char full_msg[4096];
+        char combined_hints[2048] = {0};
+        if (hints)
+        {
+            const char *const *h = hints;
+            while (*h)
+            {
+                strncat(combined_hints,
+                        "\nHelp: ", sizeof(combined_hints) - strlen(combined_hints) - 1);
+                strncat(combined_hints, *h, sizeof(combined_hints) - strlen(combined_hints) - 1);
+                h++;
+            }
+        }
+        snprintf(full_msg, sizeof(full_msg), "%s%s", msg, combined_hints);
+        g_parser_ctx->on_error(g_parser_ctx->error_callback_data, t, full_msg);
+        return; // Recover!
+    }
+
+    exit(1);
+}
+
 void zerror_at(Token t, const char *fmt, ...)
 {
     if (g_config.json_output)

@@ -1105,17 +1105,88 @@ static ASTNode *create_fstring_block(ParserContext *ctx, Token parent_token, cha
         int start_line = sub_l.line;
         int start_col = sub_l.col;
 
+        // Check for common invalid starts before parsing
+        Token peek = lexer_peek(&sub_l);
+        int invalid_start = 0;
+
+        if (peek.type == TOK_OP)
+        {
+            // Check for =, ==, >=, <=, ., etc.
+            if (peek.len == 1 && (peek.start[0] == '=' || peek.start[0] == '.'))
+            {
+                invalid_start = 1;
+            }
+            else if (peek.len >= 2 &&
+                     (strncmp(peek.start, "==", 2) == 0 || strncmp(peek.start, ">=", 2) == 0 ||
+                      strncmp(peek.start, "<=", 2) == 0))
+            {
+                invalid_start = 1;
+            }
+        }
+        else if (peek.type == TOK_LANGLE || peek.type == TOK_RANGLE || peek.type == TOK_RBRACE ||
+                 peek.type == TOK_COLON || peek.type == TOK_COMMA)
+        {
+            invalid_start = 1;
+        }
+        else if (peek.type == TOK_IDENT)
+        {
+            // Check keywords if they are parsed as identifiers
+            if ((peek.len == 6 && strncmp(peek.start, "return", 6) == 0) ||
+                (peek.len == 5 && strncmp(peek.start, "yield", 5) == 0))
+            {
+                invalid_start = 1;
+            }
+        }
+
+        if (invalid_start)
+        {
+            char err_msg[1024];
+            snprintf(err_msg, sizeof(err_msg), "Invalid expression start in f-string: '%.*s'.",
+                     peek.len, peek.start);
+
+            const char *hints[] = {"braces in f-strings must be escaped with '{{' or '}}'",
+                                   "use a raw string literal (r\"...\") to disable interpolation",
+                                   NULL};
+            zpanic_with_hints(peek, err_msg, hints);
+        }
+
         ASTNode *expr_node = parse_expression(ctx, &sub_l);
 
         // Check for leftover tokens.
         Token next = lexer_peek(&sub_l);
         if (next.type != TOK_RBRACE && next.type != TOK_COLON)
         {
-            char err_msg[256];
-            snprintf(err_msg, sizeof(err_msg),
-                     "Invalid expression in f-string: expected '}' or ':', found token '%s'",
-                     next.start);
-            zpanic_at(next, err_msg);
+            if (next.type == TOK_COMMA)
+            {
+                const char *hints[] = {"Escape braces with '{{' and '}}' or use a raw string "
+                                       "(r\"...\") to disable interpolation",
+                                       NULL};
+                zpanic_with_hints(
+                    next, "Invalid expression in f-string. This looks like a regex quantifier.",
+                    hints);
+            }
+            else
+            {
+                // Use a temporary buffer for the token to ensure safe printing
+                char tok_buf[64];
+                int len = next.len < 63 ? next.len : 63;
+                strncpy(tok_buf, next.start, len);
+                tok_buf[len] = '\0';
+                if (next.len > 63)
+                {
+                    strcat(tok_buf, "...");
+                }
+
+                char err_msg[256];
+                snprintf(err_msg, sizeof(err_msg),
+                         "Invalid expression in f-string: expected '}' or ':', found '%s'.",
+                         tok_buf);
+
+                const char *hints[] = {
+                    "braces in f-strings must be escaped with '{{' or '}}'",
+                    "use a raw string literal (r\"...\") to disable interpolation", NULL};
+                zpanic_with_hints(next, err_msg, hints);
+            }
         }
 
         char *fmt = NULL;

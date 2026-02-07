@@ -30,6 +30,11 @@ void zpanic_at(Token t, const char *fmt, ...);
 void zpanic_with_suggestion(Token t, const char *msg, const char *suggestion);
 
 /**
+ * @brief Fatal error with multiple suggestions/hints (NULL-terminated array).
+ */
+void zpanic_with_hints(Token t, const char *msg, const char *const *hints);
+
+/**
  * @brief Non-fatal error with token location (does not exit).
  * Used for semantic analysis to report multiple errors.
  */
