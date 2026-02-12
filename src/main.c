@@ -5,6 +5,7 @@
 #include "zen/zen_facts.h"
 #include "zprep.h"
 #include "analysis/typecheck.h"
+#include "codegen/compat.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdlib.h>
@@ -328,6 +329,21 @@ int main(int argc, char **argv)
             char *real_path = realpath(extra_path, NULL);
             const char *path = real_path ? real_path : extra_path;
 
+            const char *ext = strrchr(path, '.');
+            if (ext && ZC_IS_BACKEND_EXT(ext))
+            {
+                if (g_config.c_file_count < 64)
+                {
+                    g_config.c_files[g_config.c_file_count++] =
+                        real_path ? strdup(real_path) : strdup(extra_path);
+                }
+                if (real_path)
+                {
+                    free(real_path);
+                }
+                continue;
+            }
+
             if (is_file_imported(&ctx, path))
             {
                 if (real_path)
@@ -461,7 +477,7 @@ int main(int argc, char **argv)
     }
 
     // Compile C
-    char cmd[8192];
+    char cmd[16384];
     char *outfile = g_config.output_file ? g_config.output_file : "a.out";
 
     const char *thread_flag = g_parser_ctx->has_async ? "-lpthread" : "";
@@ -479,10 +495,18 @@ int main(int argc, char **argv)
 
     // If using cosmocc, it handles these usually, but keeping them is okay for Linux targets
 
-    snprintf(cmd, sizeof(cmd), "%s %s %s %s %s -o %s %s %s %s -I./src %s", g_config.cc,
+    // Construct extra C sources string
+    char extra_c_sources[4096] = {0};
+    for (int i = 0; i < g_config.c_file_count; i++)
+    {
+        strcat(extra_c_sources, " ");
+        strcat(extra_c_sources, g_config.c_files[i]);
+    }
+
+    snprintf(cmd, sizeof(cmd), "%s %s %s %s %s -o %s %s %s %s %s -I./src %s", g_config.cc,
              g_config.gcc_flags, g_cflags, g_config.is_freestanding ? "-ffreestanding" : "",
-             g_config.quiet ? "-w" : "", outfile, temp_source_file, math_flag, thread_flag,
-             g_link_flags);
+             g_config.quiet ? "-w" : "", outfile, temp_source_file, extra_c_sources, math_flag,
+             thread_flag, g_link_flags);
 
     if (g_config.verbose)
     {

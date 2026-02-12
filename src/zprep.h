@@ -219,6 +219,8 @@ typedef struct
     char *input_file;      ///< Input source file path.
     char *extra_files[64]; ///< Additional input files.
     int extra_file_count;  ///< Number of extra input files.
+    char *c_files[64];     ///< Additional C/C++/OBJ files to be passed directly to backend.
+    int c_file_count;      ///< Number of C/C++/OBJ files.
     char *output_file;     ///< Output binary file path.
 
     // Modes.
