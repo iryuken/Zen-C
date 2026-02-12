@@ -4,11 +4,14 @@ on:
   pull_request_target:
     types: [opened]
 
+permissions:
+  pull-requests: write
+
 jobs:
   welcome:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/first-interaction@v1
+      - uses: actions/first-interaction@v3.0.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           pr-message: |
