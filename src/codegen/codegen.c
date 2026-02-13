@@ -143,7 +143,7 @@ static void codegen_var_expr(ParserContext *ctx, ASTNode *node, FILE *out)
 }
 
 // Emit lambda expression
-static void codegen_lambda_expr(ASTNode *node, FILE *out)
+static void codegen_lambda_expr(ParserContext *ctx, ASTNode *node, FILE *out)
 {
     if (node->lambda.num_captures > 0)
     {
@@ -188,32 +188,25 @@ static void codegen_lambda_expr(ASTNode *node, FILE *out)
             else
             {
                 fprintf(out, "ctx->%s = ", node->lambda.captured_vars[i]);
-                int found = 0;
-                if (g_current_lambda)
+
+                ASTNode *var_node = ast_create(NODE_EXPR_VAR);
+                var_node->var_ref.name = xstrdup(node->lambda.captured_vars[i]);
+                var_node->token = node->token;
+
+                if (node->lambda.captured_types && node->lambda.captured_types[i])
                 {
-                    for (int k = 0; k < g_current_lambda->lambda.num_captures; k++)
-                    {
-                        if (strcmp(node->lambda.captured_vars[i],
-                                   g_current_lambda->lambda.captured_vars[k]) == 0)
-                        {
-                            if (g_current_lambda->lambda.capture_modes &&
-                                g_current_lambda->lambda.capture_modes[k] == 1)
-                            {
-                                fprintf(out, "(*ctx->%s)", node->lambda.captured_vars[i]);
-                            }
-                            else
-                            {
-                                fprintf(out, "ctx->%s", node->lambda.captured_vars[i]);
-                            }
-                            found = 1;
-                            break;
-                        }
-                    }
+                    var_node->resolved_type = xstrdup(node->lambda.captured_types[i]);
                 }
-                if (!found)
+                else
                 {
-                    fprintf(out, "%s", node->lambda.captured_vars[i]);
+                    // Should rely on analysis, but fallback just in case.
+                    var_node->resolved_type = xstrdup("int");
                 }
+
+                codegen_expression_with_move(ctx, var_node, out);
+
+                ast_free(var_node);
+
                 fprintf(out, ";\n");
             }
         }
@@ -439,7 +432,7 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
         codegen_var_expr(ctx, node, out);
         break;
     case NODE_LAMBDA:
-        codegen_lambda_expr(node, out);
+        codegen_lambda_expr(ctx, node, out);
         break;
     case NODE_EXPR_LITERAL:
         codegen_literal_expr(node, out);

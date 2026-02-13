@@ -400,6 +400,15 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    if (!g_config.use_typecheck && !g_config.mode_check)
+    {
+        int move_result = check_moves_only(&ctx, root);
+        if (move_result != 0)
+        {
+            return 1;
+        }
+    }
+
     // Run Semantic Analysis (Type Checker) if enabled or in check mode
     int tc_result = 0;
     if (g_config.use_typecheck || g_config.mode_check)

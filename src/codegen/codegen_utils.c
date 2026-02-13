@@ -694,6 +694,7 @@ char *replace_string_type(const char *args)
 // Helper to emit auto type or fallback.
 void emit_auto_type(ParserContext *ctx, ASTNode *init_expr, Token t, FILE *out)
 {
+    (void)t;
     char *inferred = NULL;
     if (init_expr)
     {

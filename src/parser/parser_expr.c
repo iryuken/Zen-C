@@ -127,13 +127,14 @@ char *infer_type(ParserContext *ctx, ASTNode *node); // from codegen
 static void check_move_usage(ParserContext *ctx, ASTNode *node, Token t)
 {
     (void)t;
+    (void)ctx;
     if (!node)
     {
         return;
     }
     if (node->type == NODE_EXPR_VAR)
     {
-        ZenSymbol *sym = find_symbol_entry(ctx, node->var_ref.name);
+        // Move check placeholder: find_symbol_entry(ctx, node->var_ref.name);
     }
 }
 

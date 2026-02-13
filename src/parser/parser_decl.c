@@ -771,7 +771,7 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
     // Move Semantics Logic for Initialization
     if (init && init->type == NODE_EXPR_VAR)
     {
-        ZenSymbol *s = find_symbol_entry(ctx, init->var_ref.name);
+        // Move semantics placeholder: find_symbol_entry(ctx, init->var_ref.name);
     }
 
     // Global detection: Either no scope (yet) OR root scope (no parent)

@@ -835,10 +835,10 @@ void register_builtins(ParserContext *ctx)
     add_symbol(ctx, "ferror", "int", type_new(TYPE_INT));
     add_symbol(ctx, "usleep", "int", type_new(TYPE_INT));
 
-    // Register va_list as opaque struct
     ASTNode *va_def = ast_create(NODE_STRUCT);
     va_def->strct.name = xstrdup("va_list");
     register_struct_def(ctx, "va_list", va_def);
+    register_impl(ctx, "Copy", "va_list");
 }
 
 void add_instantiated_func(ParserContext *ctx, ASTNode *fn)

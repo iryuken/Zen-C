@@ -10,12 +10,20 @@
 
 static void tc_error(TypeChecker *tc, Token t, const char *msg)
 {
+    if (tc->move_checks_only)
+    {
+        return;
+    }
     zerror_at(t, "%s", msg);
     tc->error_count++;
 }
 
 static void tc_error_with_hints(TypeChecker *tc, Token t, const char *msg, const char *const *hints)
 {
+    if (tc->move_checks_only)
+    {
+        return;
+    }
     zerror_with_hints(t, msg, hints);
     tc->error_count++;
 }
@@ -109,6 +117,7 @@ static int is_char_type(Type *t)
 // ** Node Checkers **
 
 static void check_node(TypeChecker *tc, ASTNode *node);
+static void check_expr_lambda(TypeChecker *tc, ASTNode *node);
 static int check_type_compatibility(TypeChecker *tc, Type *target, Type *value, Token t);
 
 static Type *resolve_alias(Type *t)
@@ -1337,6 +1346,9 @@ static void check_node(TypeChecker *tc, ASTNode *node)
     case NODE_ASM:
         // TODO: Implement.
         break;
+    case NODE_LAMBDA:
+        check_expr_lambda(tc, node);
+        break;
     case NODE_EXPR_SIZEOF:
         if (node->size_of.expr)
         {
@@ -1363,6 +1375,66 @@ static void check_node(TypeChecker *tc, ASTNode *node)
     }
 }
 
+static void check_expr_lambda(TypeChecker *tc, ASTNode *node)
+{
+    if (node->lambda.captured_vars)
+    {
+        for (int i = 0; i < node->lambda.num_captures; i++)
+        {
+            char *var_name = node->lambda.captured_vars[i];
+            int mode = node->lambda.capture_modes ? node->lambda.capture_modes[i]
+                                                  : node->lambda.default_capture_mode;
+
+            ZenSymbol *sym = tc_lookup(tc, var_name);
+            if (!sym)
+            {
+                continue;
+            }
+
+            check_use_validity(tc, node, sym);
+
+            if (mode == 0)
+            {
+                Type *t = sym->type_info;
+                if (!is_type_copy(tc->pctx, t))
+                {
+                    mark_symbol_moved(tc->pctx, sym, node);
+                }
+            }
+        }
+    }
+
+    tc_enter_scope(tc);
+
+    for (int i = 0; i < node->lambda.num_params; i++)
+    {
+        char *pname = node->lambda.param_names[i];
+        Type *ptype = NULL;
+        if (node->type_info && node->type_info->kind == TYPE_FUNCTION && node->type_info->args)
+        {
+            if (i < node->type_info->arg_count)
+            {
+                ptype = node->type_info->args[i];
+            }
+        }
+        tc_add_symbol(tc, pname, ptype, node->token);
+    }
+
+    if (node->lambda.body)
+    {
+        if (node->lambda.body->type == NODE_BLOCK)
+        {
+            check_block(tc, node->lambda.body);
+        }
+        else
+        {
+            check_node(tc, node->lambda.body);
+        }
+    }
+
+    tc_exit_scope(tc);
+}
+
 // ** Entry Point **
 
 int check_program(ParserContext *ctx, ASTNode *root)
@@ -1370,9 +1442,6 @@ int check_program(ParserContext *ctx, ASTNode *root)
     TypeChecker tc = {0};
     tc.pctx = ctx;
 
-    // Initialize Flow Analysis State
-    // If we already have one (e.g. from previous pass), reuse/reset?
-    // Usually check_program is top level.
     if (!ctx->move_state)
     {
         ctx->move_state = move_state_create(NULL);
@@ -1381,11 +1450,6 @@ int check_program(ParserContext *ctx, ASTNode *root)
     printf("[TypeCheck] Starting semantic analysis...\n");
     check_node(&tc, root);
 
-    // Clean up flow state
-    // We can keep it if we want LSP to query it, but for now free it.
-    // Or maybe keep it in ctx and free in parser cleanup?
-    // Let's keep it for now, or free if this is a one-shot check.
-    // Given the memory management of this compiler seems manual/arena-less for this:
     if (ctx->move_state)
     {
         move_state_free(ctx->move_state);
@@ -1399,4 +1463,26 @@ int check_program(ParserContext *ctx, ASTNode *root)
     }
     printf("[TypeCheck] Passed.\n");
     return 0;
+}
+
+int check_moves_only(ParserContext *ctx, ASTNode *root)
+{
+    TypeChecker tc = {0};
+    tc.pctx = ctx;
+    tc.move_checks_only = 1;
+
+    if (!ctx->move_state)
+    {
+        ctx->move_state = move_state_create(NULL);
+    }
+
+    check_node(&tc, root);
+
+    if (ctx->move_state)
+    {
+        move_state_free(ctx->move_state);
+        ctx->move_state = NULL;
+    }
+
+    return tc.error_count;
 }
