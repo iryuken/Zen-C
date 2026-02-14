@@ -972,12 +972,17 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
                     fprintf(out, " = ");
                     codegen_expression(ctx, node->var_decl.init_expr, out);
                 }
-                else if (node->type_info && (node->type_info->kind == TYPE_ARRAY ||
-                                             node->type_info->kind == TYPE_STRUCT ||
-                                             node->type_info->kind == TYPE_BOOL))
+                else if (node->type_info)
                 {
-                    // Zero initialize arrays and structs by default so we don't have garbage
-                    fprintf(out, " = {0}");
+                    // Zero initialize all variables by default so we don't have garbage
+                    if (node->type_info->kind == TYPE_ARRAY || node->type_info->kind == TYPE_STRUCT)
+                    {
+                        fprintf(out, " = {0}");
+                    }
+                    else
+                    {
+                        fprintf(out, " = 0");
+                    }
                 }
                 fprintf(out, ";\n");
                 if (node->var_decl.init_expr &&
