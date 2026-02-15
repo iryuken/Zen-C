@@ -235,4 +235,7 @@ zig:
 clang:
 	$(MAKE) CC=clang
 
-.PHONY: all clean install uninstall install-ape uninstall-ape test zig clang ape
+windows:
+	$(MAKE) CC="x86_64-w64-mingw32-gcc" TARGET="zc.exe" UI_OS="Windows" LIBS="-static -lm -lpthread"
+
+.PHONY: all clean install uninstall install-ape uninstall-ape test zig clang ape windows

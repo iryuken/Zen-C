@@ -45,6 +45,9 @@ jobs:
           - name: Self-Hosted
             os: self-hosted
             cc: gcc # Default
+          - name: Windows MinGW
+            os: windows-latest
+            cc: gcc
 
     steps:
     - uses: actions/checkout@v4
@@ -69,12 +72,22 @@ jobs:
       run: |
         if [ "${{ matrix.cc }}" = "zig cc" ]; then
            make  # Build zc with default CC (stable), but test zc using zig cc backend
+        elif [ "${{ runner.os }}" = "Windows" ]; then
+           ./build.bat
         else
            make CC="${{ matrix.cc }}"
         fi
 
     - name: Run Tests
-      run: ./tests/scripts/run_tests.sh --cc "${{ matrix.cc }}" -Istd/third-party/tre/include -Istd obj/std/third-party/tre/lib/*.o
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          # Skip running full test suite on Windows for now, or use a windows-compatible test runner
+          # For now, just verify zc.exe exists and runs
+          ./zc.exe --version
+        else
+          ./tests/scripts/run_tests.sh --cc "${{ matrix.cc }}" -Istd/third-party/tre/include -Istd obj/std/third-party/tre/lib/*.o
+        fi
 
   ape:
     name: Build APE
