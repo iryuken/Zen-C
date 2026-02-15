@@ -974,12 +974,8 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
                 }
                 else if (node->type_info)
                 {
-                    // Zero initialize all variables by default so we don't have garbage
-                    if (node->type_info->kind == TYPE_ARRAY || node->type_info->kind == TYPE_STRUCT)
-                    {
-                        fprintf(out, " = {0}");
-                    }
-                    else
+                    // Only zero initialize integer types by default (avoid garbage in accumulators)
+                    if (is_integer_type(node->type_info))
                     {
                         fprintf(out, " = 0");
                     }

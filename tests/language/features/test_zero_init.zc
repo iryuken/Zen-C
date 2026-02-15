@@ -1,24 +1,10 @@
-
-def SIZE = 5;
-
-struct Point {
-    x: int;
-    y: int;
-}
-
 fn main() {
-    let zeros: [int; SIZE]; 
-    
-    if (zeros[0] != 0) return 1;
-    if (zeros[1] != 0) return 1;
-    if (zeros[2] != 0) return 1;
-    if (zeros[3] != 0) return 1;
-    if (zeros[4] != 0) return 1;
+    let i: int;
+    if (i != 0) return 1;
 
-    let p: Point;
-    if (p.x != 0) return 2;
-    if (p.y != 0) return 2;
-    
+    let c: char;
+    if (c != 0) return 2;
+
     let b: bool;
     if (b) { return 3; }
 
