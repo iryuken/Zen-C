@@ -1326,6 +1326,7 @@ Zen C includes a standard library (`std`) covering essential functionality.
 | **`std/stack.zc`** | LIFO Stack `Stack<T>`. | [Docs](docs/std/stack.md) |
 | **`std/set.zc`** | Generic Hash Set `Set<T>`. | [Docs](docs/std/set.md) |
 | **`std/process.zc`** | Process execution and management. | [Docs](docs/std/process.md) |
+| **`std/regex.zc`** | Regular Expressions (TRE based). | [Docs](docs/std/regex.md) |
 
 </details>
 
@@ -1629,6 +1630,7 @@ This project uses third-party libraries. Full license texts can be found in the 
 *   **[cJSON](https://github.com/DaveGamble/cJSON)** (MIT License): Used for JSON parsing and generation in the Language Server.
 *   **[zc-ape](https://github.com/OEvgeny/zc-ape)** (MIT License): The original Actually Portable Executable port of Zen-C by [Eugene Olonov](https://github.com/OEvgeny).
 *   **[Cosmopolitan Libc](https://github.com/jart/cosmopolitan)** (ISC License): The foundational library that makes APE possible.
+*   **[TRE](https://github.com/laurikari/tre)** (BSD License): Used for the regular expression engine in the standard library.
 
 ---
 

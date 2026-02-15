@@ -21,7 +21,7 @@ endif
 # To build with zig:   make CC="zig cc"
 # Version synchronization
 GIT_VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.1.0")
-CFLAGS = -Wall -Wextra -g -I./src -I./src/ast -I./src/parser -I./src/codegen -I./plugins -I./src/zen -I./src/utils -I./src/lexer -I./src/analysis -I./src/lsp -I./src/diagnostics -DZEN_VERSION=\"$(GIT_VERSION)\" -DZEN_SHARE_DIR=\"$(SHAREDIR)\"
+CFLAGS = -Wall -Wextra -g -I./src -I./src/ast -I./src/parser -I./src/codegen -I./plugins -I./src/zen -I./src/utils -I./src/lexer -I./src/analysis -I./src/lsp -I./src/diagnostics -I./std/third-party/tre/include -DZEN_VERSION=\"$(GIT_VERSION)\" -DZEN_SHARE_DIR=\"$(SHAREDIR)\" -DHAVE_CONFIG_H
 TARGET = zc$(EXE)
 LIBS = -lm -lpthread -ldl
 
@@ -56,7 +56,20 @@ SRCS = src/main.c \
        src/zen/zen_facts.c \
        src/repl/repl.c \
        src/repl/repl_os.c \
-       src/plugins/plugin_manager.c
+       src/plugins/plugin_manager.c \
+       std/third-party/tre/lib/regcomp.c \
+       std/third-party/tre/lib/regerror.c \
+       std/third-party/tre/lib/regexec.c \
+       std/third-party/tre/lib/tre-ast.c \
+       std/third-party/tre/lib/tre-compile.c \
+       std/third-party/tre/lib/tre-filter.c \
+       std/third-party/tre/lib/tre-match-approx.c \
+       std/third-party/tre/lib/tre-match-backtrack.c \
+       std/third-party/tre/lib/tre-match-parallel.c \
+       std/third-party/tre/lib/tre-mem.c \
+       std/third-party/tre/lib/tre-parse.c \
+       std/third-party/tre/lib/tre-stack.c \
+       std/third-party/tre/lib/xmalloc.c
 
 OBJ_DIR = obj
 OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRCS))
@@ -202,7 +215,7 @@ clean:
 
 # Test
 test: $(TARGET) $(PLUGINS)
-	./tests/scripts/run_tests.sh
+	./tests/scripts/run_tests.sh -Istd/third-party/tre/include -Istd obj/std/third-party/tre/lib/*.o
 	./tests/scripts/run_codegen_tests.sh
 	./tests/scripts/run_example_transpile.sh
 

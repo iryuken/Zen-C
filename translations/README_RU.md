@@ -1257,6 +1257,7 @@ Zen C включает стандартную библиотеку (`std`), ох
 | **`std/stack.zc`**   | LIFO стек `Stack<T>`.                              | [Docs](../docs/std/stack.md)   |
 | **`std/set.zc`**     | Обобщённое хеш-множество `Set<T>`.                 | [Docs](../docs/std/set.md)     |
 | **`std/process.zc`** | Выполнение и управление процессами.                | [Docs](../docs/std/process.md) |
+| **`std/regex.zc`** | Регулярные выражения (на основе TRE).              | [Docs](../docs/std/regex.md) |
 
 </details>
 
@@ -1558,6 +1559,7 @@ fn main() {
 *   **[cJSON](https://github.com/DaveGamble/cJSON)** (MIT License): Используется для парсинга JSON и генерации в языковом сервере.
 *   **[zc-ape](https://github.com/OEvgeny/zc-ape)** (MIT License): Оригинальный порт Actually Portable Executable Zen-C от [Eugene Olonov](https://github.com/OEvgeny).
 *   **[Cosmopolitan Libc](https://github.com/jart/cosmopolitan)** (ISC License): Основополагающая библиотека, которая делает APE возможной.
+*   **[TRE](https://github.com/laurikari/tre)** (BSD License): Используется для движка регулярных выражений в стандартной библиотеке.
 
 ---
 

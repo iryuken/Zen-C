@@ -1,0 +1,21 @@
+
+import "std/regex.zc"
+
+test "test_tre_regex" {
+    let re = Regex::compile("a+b");
+    
+    assert(re.is_valid(), "Failed to compile regex");
+
+    assert(re.match("aaab"), "Match 1: FAILED");
+    assert(!re.match("acb"), "Match 2: FAILED");
+    
+    re.destroy();
+
+    // Test find
+    let re2 = Regex::compile("([0-9]+)");
+    let found = re2.find("Year: 2023");
+    assert(found.is_some(), "Find: FAILED (Not found)");
+    let m = found.unwrap();
+    assert(m.as_string() == "2023", "Find: FAILED (Wrong content)");
+    re2.destroy();
+}
