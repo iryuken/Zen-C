@@ -974,8 +974,24 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
                 }
                 else if (node->type_info)
                 {
-                    // Only zero initialize integer types by default (avoid garbage in accumulators)
-                    if (is_integer_type(node->type_info))
+                    TypeKind k = node->type_info->kind;
+                    // Zero initialize variables by default to prevent garbage,
+                    // but ONLY for integer types, arrays, and structs.
+                    // Floats and pointers are left uninitialized (matching C behavior).
+                    if (k == TYPE_ARRAY || k == TYPE_STRUCT)
+                    {
+                        fprintf(out, " = {0}");
+                    }
+                    else if (k == TYPE_BOOL || k == TYPE_CHAR || k == TYPE_I8 || k == TYPE_U8 ||
+                             k == TYPE_I16 || k == TYPE_U16 || k == TYPE_I32 || k == TYPE_U32 ||
+                             k == TYPE_I64 || k == TYPE_U64 || k == TYPE_I128 || k == TYPE_U128 ||
+                             k == TYPE_INT || k == TYPE_UINT || k == TYPE_USIZE ||
+                             k == TYPE_ISIZE || k == TYPE_BYTE || k == TYPE_RUNE ||
+                             k == TYPE_ENUM || k == TYPE_C_INT || k == TYPE_C_UINT ||
+                             k == TYPE_C_LONG || k == TYPE_C_ULONG || k == TYPE_C_LONG_LONG ||
+                             k == TYPE_C_ULONG_LONG || k == TYPE_C_SHORT || k == TYPE_C_USHORT ||
+                             k == TYPE_C_CHAR || k == TYPE_C_UCHAR || k == TYPE_BITINT ||
+                             k == TYPE_UBITINT)
                     {
                         fprintf(out, " = 0");
                     }

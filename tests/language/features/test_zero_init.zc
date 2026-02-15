@@ -1,13 +1,32 @@
+
+
 fn main() {
-    let i: int;
-    if (i != 0) return 1;
+    let i: int
+    let f: float
+    let b: bool
+    let c: char
+    let arr: int[5]
+    let s: string
 
-    let c: char;
-    if (c != 0) return 2;
+    // Int should be 0
+    if i != 0 {
+        println "FAIL: int not 0"
+    }
 
-    let b: bool;
-    if (b) { return 3; }
+    // Bool should be false (0)
+    if b {
+        println "FAIL: bool not false"
+    }
+    
+    // Char should be 0
+    if c != 0 {
+        println "FAIL: char not 0"
+    }
 
-    println "SUCCESS";
-    return 0;
+    // Array should be zeroed
+    if arr[0] != 0 {
+        println "FAIL: arr not 0"
+    }
+
+    println "PASS"
 }
