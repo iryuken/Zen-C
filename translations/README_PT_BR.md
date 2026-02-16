@@ -18,7 +18,7 @@
     <a href="#"><img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Status do Build"></a>
     <a href="#"><img src="https://img.shields.io/badge/license-MIT-blue" alt="Licença"></a>
     <a href="#"><img src="https://img.shields.io/github/v/release/z-libs/Zen-C?label=versão&color=orange" alt="Versão"></a>
-    <a href="#"><img src="https://img.shields.io/badge/platform-linux-lightgrey" alt="Plataforma"></a>
+    <a href="#"><img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" alt="Plataforma"></a>
   </p>
   <p><em>Programe como linguagem de alto nível, execute como C.</em></p>
 </div>
@@ -115,6 +115,18 @@ make clean # remove arquivos de build antigos
 make
 sudo make install
 ```
+
+### Windows
+
+Zen C has full native support for Windows (x86_64). You can build using the provided batch script with GCC (MinGW):
+
+```cmd
+build.bat
+```
+
+This will build the compiler (`zc.exe`). Networking, Filesystem, and Process operations are fully supported via the Platform Abstraction Layer (PAL).
+
+Alternatively, you can use `make` if you have a Unix-like environment (MSYS2, Cygwin, git-bash).
 
 ### Build Portátil (APE)
 

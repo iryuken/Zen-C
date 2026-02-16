@@ -495,7 +495,7 @@ int main(int argc, char **argv)
     }
 
     // Compile C
-    char cmd[16384];
+    char cmd[32768];
     char *outfile = g_config.output_file ? g_config.output_file : "a.out";
 
     const char *thread_flag = g_parser_ctx->has_async ? "-lpthread" : "";
@@ -511,9 +511,6 @@ int main(int argc, char **argv)
         }
     }
 
-    // If using cosmocc, it handles these usually, but keeping them is okay for Linux targets
-
-    // Construct extra C sources string
     char extra_c_sources[4096] = {0};
     for (int i = 0; i < g_config.c_file_count; i++)
     {
@@ -521,7 +518,6 @@ int main(int argc, char **argv)
         strcat(extra_c_sources, g_config.c_files[i]);
     }
 
-    // Construct linker flags
     char linker_flags[1024] = {0};
     strcpy(linker_flags, g_link_flags);
     if (z_is_windows())
@@ -529,10 +525,55 @@ int main(int argc, char **argv)
         strcat(linker_flags, " -lws2_32");
     }
 
-    snprintf(cmd, sizeof(cmd), "%s %s %s %s %s -o %s %s %s %s %s -I./src %s", g_config.cc,
+    char exe_path[8192] = {0};
+    z_get_executable_path(exe_path, sizeof(exe_path));
+
+    char std_path[9216] = {0};
+    char config_path[9216] = {0};
+
+    char *last_sep = strrchr(exe_path,
+#ifdef _WIN32
+                             '\\'
+#else
+                             '/'
+#endif
+    );
+    if (last_sep)
+    {
+        *last_sep = 0;
+    }
+
+    char dev_std[9000];
+    snprintf(dev_std, sizeof(dev_std), "%s/std", exe_path);
+
+    if (access(dev_std, F_OK) == 0)
+    {
+        snprintf(std_path, sizeof(std_path), "-I\"%s\"", exe_path);
+        snprintf(config_path, sizeof(config_path), "-I\"%s/std/third-party/tre/include\"",
+                 exe_path);
+    }
+    else
+    {
+        char install_std[9000];
+        snprintf(install_std, sizeof(install_std), "%s/../share/zenc/std", exe_path);
+
+        if (access(install_std, F_OK) == 0)
+        {
+            snprintf(std_path, sizeof(std_path), "-I\"%s/../share/zenc\"", exe_path);
+            snprintf(config_path, sizeof(config_path),
+                     "-I\"%s/../share/zenc/std/third-party/tre/include\"", exe_path);
+        }
+        else
+        {
+            strcpy(std_path, "-I.");
+            strcpy(config_path, "-I./std/third-party/tre/include");
+        }
+    }
+
+    snprintf(cmd, sizeof(cmd), "%s %s %s %s %s -o %s %s %s %s %s -I./src %s %s %s", g_config.cc,
              g_config.gcc_flags, g_cflags, g_config.is_freestanding ? "-ffreestanding" : "",
              g_config.quiet ? "-w" : "", outfile, temp_source_file, extra_c_sources, math_flag,
-             thread_flag, linker_flags);
+             thread_flag, linker_flags, std_path, config_path);
 
     if (g_config.verbose)
     {
@@ -552,7 +593,6 @@ int main(int argc, char **argv)
 
     if (!g_config.emit_c)
     {
-        // remove("out.c"); // Keep it for debugging for now or follow flag
         remove(temp_source_file);
     }
 

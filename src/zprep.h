@@ -348,38 +348,6 @@ void scan_build_directives(struct ParserContext *ctx, const char *src);
  */
 void load_all_configs(void);
 
-/**
- * @brief Get monotonic time in seconds (high precision).
- */
-double z_get_monotonic_time(void);
-
-/**
- * @brief Get wall clock time in seconds.
- */
-double z_get_time(void);
-
-/**
- * @brief Setup terminal (enable ANSI colors on Windows).
- */
-void z_setup_terminal(void);
-
-/**
- * @brief Get temporary directory path.
- * Windows: %TEMP% or C:\Windows\Temp
- * POSIX: /tmp
- * @return Path string (do not free).
- */
-const char *z_get_temp_dir(void);
-
-/**
- * @brief Get current process ID.
- * @return PID.
- */
-int z_get_pid(void);
-
-/**
- * @brief Check if file descriptor refers to a terminal.
- */
-int z_isatty(int fd);
+#include "pal/pal.h"
 
 #endif

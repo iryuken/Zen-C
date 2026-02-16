@@ -18,7 +18,7 @@
     <a href="#"><img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status"></a>
     <a href="#"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
     <a href="#"><img src="https://img.shields.io/github/v/release/z-libs/Zen-C?label=version&color=orange" alt="Version"></a>
-    <a href="#"><img src="https://img.shields.io/badge/platform-linux-lightgrey" alt="Platform"></a>
+    <a href="#"><img src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey" alt="Platform"></a>
   </p>
   <p><em>Пишите как на высокоуровневом языке, запускайте как Си.</em></p>
 </div>
@@ -112,6 +112,18 @@ make clean # удалить старые файлы сборки
 make
 sudo make install
 ```
+
+### Windows
+
+Zen C has full native support for Windows (x86_64). You can build using the provided batch script with GCC (MinGW):
+
+```cmd
+build.bat
+```
+
+This will build the compiler (`zc.exe`). Networking, Filesystem, and Process operations are fully supported via the Platform Abstraction Layer (PAL).
+
+Alternatively, you can use `make` if you have a Unix-like environment (MSYS2, Cygwin, git-bash).
 
 ### Портативная сборка (APE)
 Zen C можно скомпилировать как **Actually Portable Executable (APE)** с помощью [Cosmopolitan Libc](https://github.com/jart/cosmopolitan). Это создаёт один исполняемый файл (`.com`), работающий нативно на Linux, macOS, Windows, FreeBSD, OpenBSD и NetBSD на архитектурах x86_64 и aarch64.

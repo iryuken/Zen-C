@@ -6,6 +6,9 @@
 
 */
 
+#ifndef TRE_MATCH_UTILS_H
+#define TRE_MATCH_UTILS_H
+
 #define str_source ((const tre_str_source*)string)
 
 #ifdef TRE_WCHAR
@@ -213,3 +216,5 @@ tre_neg_char_classes_match(tre_ctype_t *classes, tre_cint_t wc, int icase)
       classes++;
   return 0; /* No match. */
 }
+
+#endif /* TRE_MATCH_UTILS_H */

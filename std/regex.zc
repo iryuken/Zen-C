@@ -1,4 +1,16 @@
-include "third-party/tre/include/tre.h"
+include "std/third-party/tre/include/tre.h"
+
+raw {
+    // Include TRE implementation for static linking
+    #ifdef _WIN32
+      // Windows needs full paths or correct relative paths.
+      // Assuming build from root:
+      #include "std/third-party/tre/tre_full.c"
+    #else
+      // Linux/macOS: Link against object files in Makefile
+      // #include "std/third-party/tre/tre_full.c"
+    #endif
+}
 
 import "./core.zc"
 import "./string.zc"

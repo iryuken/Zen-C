@@ -46,75 +46,7 @@ static void *arena_alloc_raw(size_t size)
 }
 
 #include <time.h>
-
-#ifdef _WIN32
-#include <windows.h>
-#include <io.h>
-#include <process.h>
-#endif
-
-double z_get_monotonic_time(void)
-{
-#ifdef _WIN32
-    static LARGE_INTEGER freq;
-    static int init = 0;
-    if (!init)
-    {
-        QueryPerformanceFrequency(&freq);
-        init = 1;
-    }
-    LARGE_INTEGER now;
-    QueryPerformanceCounter(&now);
-    return (double)now.QuadPart / (double)freq.QuadPart;
-#else
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec + ts.tv_nsec / 1e9;
-#endif
-}
-
-double z_get_time(void)
-{
-#ifdef _WIN32
-    struct timespec ts;
-    timespec_get(&ts, TIME_UTC);
-    return ts.tv_sec + ts.tv_nsec / 1e9;
-#else
-    struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    return ts.tv_sec + ts.tv_nsec / 1e9;
-#endif
-}
-
-void z_setup_terminal(void)
-{
-#ifdef _WIN32
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hOut == INVALID_HANDLE_VALUE)
-    {
-        return;
-    }
-    DWORD dwMode = 0;
-    if (!GetConsoleMode(hOut, &dwMode))
-    {
-        return;
-    }
-    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    SetConsoleMode(hOut, dwMode);
-
-    HANDLE hErr = GetStdHandle(STD_ERROR_HANDLE);
-    if (hErr == INVALID_HANDLE_VALUE)
-    {
-        return;
-    }
-    if (!GetConsoleMode(hErr, &dwMode))
-    {
-        return;
-    }
-    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    SetConsoleMode(hErr, dwMode);
-#endif
-}
+#include "../pal/pal.h"
 
 void *xmalloc(size_t size)
 {
@@ -543,47 +475,4 @@ int levenshtein(const char *s1, const char *s2)
     }
 
     return matrix[len1][len2];
-}
-
-const char *z_get_temp_dir(void)
-{
-#ifdef _WIN32
-    static char tmp[MAX_PATH_SIZE] = {0};
-    if (tmp[0])
-    {
-        return tmp;
-    }
-
-    if (GetTempPathA(sizeof(tmp), tmp))
-    {
-        // Remove trailing backslash if present
-        int len = strlen(tmp);
-        if (len > 0 && tmp[len - 1] == '\\')
-        {
-            tmp[len - 1] = 0;
-        }
-        return tmp;
-    }
-    return "C:\\Windows\\Temp";
-#else
-    return "/tmp";
-#endif
-}
-
-int z_get_pid(void)
-{
-#ifdef _WIN32
-    return _getpid();
-#else
-    return getpid();
-#endif
-}
-
-int z_isatty(int fd)
-{
-#ifdef _WIN32
-    return _isatty(fd);
-#else
-    return isatty(fd);
-#endif
 }
