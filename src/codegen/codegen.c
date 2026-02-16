@@ -1422,7 +1422,7 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
         codegen_expression(ctx, node->va_copy.src, out);
         fprintf(out, ")");
         break;
-    case NODE_COMMENT:
+    case NODE_AST_COMMENT:
         fprintf(out, "%s\n", node->comment.content);
         break;
     case NODE_VA_ARG:

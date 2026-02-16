@@ -19,7 +19,7 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
             {
                 lexer_next(l);        // consume
                 l->emit_comments = 0; // reset
-                ASTNode *node = ast_create(NODE_COMMENT);
+                ASTNode *node = ast_create(NODE_AST_COMMENT);
                 node->comment.content = xmalloc(tk.len + 1);
                 strncpy(node->comment.content, tk.start, tk.len);
                 node->comment.content[tk.len] = 0;

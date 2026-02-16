@@ -234,7 +234,7 @@ void emit_includes_and_aliases(ASTNode *node, FILE *out)
                 fprintf(out, "#include \"%s\"\n", node->include.path);
             }
         }
-        else if (node->type == NODE_COMMENT)
+        else if (node->type == NODE_AST_COMMENT)
         {
             fprintf(out, "%s\n", node->comment.content);
         }

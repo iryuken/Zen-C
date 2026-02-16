@@ -45,7 +45,7 @@ ASTNode *ast_create(NodeType type)
 
 void ast_free(ASTNode *node)
 {
-    if (node->type == NODE_COMMENT)
+    if (node->type == NODE_AST_COMMENT)
     {
         if (node->comment.content)
         {

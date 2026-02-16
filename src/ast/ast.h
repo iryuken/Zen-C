@@ -174,7 +174,7 @@ typedef enum
     NODE_VA_END,             ///< va_end intrinsic.
     NODE_VA_COPY,            ///< va_copy intrinsic.
     NODE_VA_ARG,             ///< va_arg intrinsic.
-    NODE_COMMENT             ///< Comment node.
+    NODE_AST_COMMENT         ///< Comment node.
 } NodeType;
 
 // ** AST Node Structure **

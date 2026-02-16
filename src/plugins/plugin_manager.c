@@ -1,6 +1,6 @@
 
 #include "plugin_manager.h"
-#include <dlfcn.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +14,68 @@ typedef struct PluginNode
 } PluginNode;
 
 static PluginNode *head = NULL;
+
+#ifdef _WIN32
+// Windows stub for plugins (until we implement LoadLibrary support)
+void zptr_plugin_mgr_init(void)
+{
+    head = NULL;
+}
+
+void zptr_register_plugin(ZPlugin *plugin)
+{
+    // Simplified register logic for static plugins if any
+    if (!plugin)
+    {
+        return;
+    }
+    if (zptr_find_plugin(plugin->name))
+    {
+        return;
+    }
+
+    PluginNode *node = malloc(sizeof(PluginNode));
+    node->plugin = plugin;
+    node->handle = NULL;
+    node->next = head;
+    head = node;
+}
+
+ZPlugin *zptr_load_plugin(const char *path)
+{
+    fprintf(stderr, "Plugins not yet supported on Windows: %s\n", path);
+    return NULL;
+}
+
+ZPlugin *zptr_find_plugin(const char *name)
+{
+    PluginNode *curr = head;
+    while (curr)
+    {
+        if (strcmp(curr->plugin->name, name) == 0)
+        {
+            return curr->plugin;
+        }
+        curr = curr->next;
+    }
+    return NULL;
+}
+
+void zptr_plugin_mgr_cleanup(void)
+{
+    PluginNode *curr = head;
+    while (curr)
+    {
+        PluginNode *next = curr->next;
+        // No handle to close
+        free(curr);
+        curr = next;
+    }
+    head = NULL;
+}
+#else
+// POSIX implementation
+#include <dlfcn.h>
 
 void zptr_plugin_mgr_init(void)
 {
@@ -102,3 +164,4 @@ void zptr_plugin_mgr_cleanup(void)
     }
     head = NULL;
 }
+#endif

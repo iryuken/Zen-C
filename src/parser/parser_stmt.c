@@ -1185,7 +1185,7 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
         {
             ASTNode *start_expr = parse_expression(ctx, l);
             // Check for Range Loop (.. or ..= or ..<)
-            TokenType next_tok = lexer_peek(l).type;
+            ZenTokenType next_tok = lexer_peek(l).type;
             if (next_tok == TOK_DOTDOT || next_tok == TOK_DOTDOT_LT || next_tok == TOK_DOTDOT_EQ)
             {
                 int is_inclusive = 0;
@@ -2142,7 +2142,7 @@ ASTNode *parse_statement(ParserContext *ctx, Lexer *l)
         lexer_next(l); // consume comment
         l->emit_comments = prev_emit;
 
-        ASTNode *node = ast_create(NODE_COMMENT);
+        ASTNode *node = ast_create(NODE_AST_COMMENT);
         node->comment.content = xmalloc(tk.len + 1);
         strncpy(node->comment.content, tk.start, tk.len);
         node->comment.content[tk.len] = 0;
@@ -2175,7 +2175,7 @@ ASTNode *parse_statement(ParserContext *ctx, Lexer *l)
     {
         Lexer lookahead = *l;
         lexer_next(&lookahead);
-        TokenType next_type = lexer_peek(&lookahead).type;
+        ZenTokenType next_type = lexer_peek(&lookahead).type;
 
         if (next_type == TOK_SEMICOLON || next_type == TOK_DOTDOT || next_type == TOK_RBRACE)
         {
