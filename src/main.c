@@ -293,7 +293,7 @@ int main(int argc, char **argv)
     Lexer l;
     lexer_init(&l, src);
 
-    ctx.hoist_out = tmpfile(); // Temp file for plugin hoisting
+    ctx.hoist_out = z_tmpfile();
     if (!ctx.hoist_out)
     {
         perror("tmpfile for hoisting");

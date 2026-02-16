@@ -162,5 +162,6 @@ void z_dlclose(void *handle);
 // OS Helpers
 int z_match_os(const char *os_name);
 const char *z_get_system_name(void);
+FILE *z_tmpfile(void);
 
 #endif // ZC_PLATFORM_OS_H

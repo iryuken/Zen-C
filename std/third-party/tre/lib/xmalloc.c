@@ -123,7 +123,7 @@ hash_table_add(hashTable *tbl, void *ptr, size_t bytes,
     xmalloc_peak_blocks = xmalloc_current_blocks;
 }
 
-static void
+static size_t
 #if defined(__GNUC__) && __GNUC__ >= 10
 __attribute__((access(none, 2)))
 #endif
@@ -131,6 +131,7 @@ hash_table_del(hashTable *tbl, void *ptr)
 {
   int i;
   hashTableItem *item, *prev;
+  size_t bytes;
 
   i = hash_void_ptr(ptr);
 
@@ -152,7 +153,8 @@ hash_table_del(hashTable *tbl, void *ptr)
       abort();
     }
 
-  xmalloc_current -= item->bytes;
+  bytes = item->bytes;
+  xmalloc_current -= bytes;
   xmalloc_current_blocks--;
 
   if (prev != NULL)
@@ -165,6 +167,8 @@ hash_table_del(hashTable *tbl, void *ptr)
       tbl->table[i] = item->next;
       free(item);
     }
+    
+  return bytes;
 }
 
 static hashTable *xmalloc_table = NULL;
@@ -320,6 +324,7 @@ xrealloc_impl(void *ptr, size_t new_size, const char *file, int line,
 	      const char *func)
 {
   void *new_ptr;
+  size_t old_size;
 
   xmalloc_init();
   assert(ptr != NULL);
@@ -339,11 +344,19 @@ xrealloc_impl(void *ptr, size_t new_size, const char *file, int line,
   else if (xmalloc_fail_after > 0)
     xmalloc_fail_after--;
 
+  /* Remove old entry first to avoid reading freed memory if realloc moves it */
+  old_size = hash_table_del(xmalloc_table, ptr);
+
   new_ptr = realloc(ptr, new_size);
-  if (new_ptr != NULL && new_ptr != ptr)
+
+  if (new_ptr != NULL)
     {
-      hash_table_del(xmalloc_table, ptr);
       hash_table_add(xmalloc_table, new_ptr, (int)new_size, file, line, func);
+    }
+  else
+    {
+      /* Realloc failed, restore old entry */
+      hash_table_add(xmalloc_table, ptr, (int)old_size, file, line, func);
     }
   return new_ptr;
 }

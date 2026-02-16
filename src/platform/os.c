@@ -67,9 +67,13 @@ double z_get_monotonic_time(void)
 double z_get_time(void)
 {
 #ifdef _WIN32
-    struct timespec ts;
-    timespec_get(&ts, TIME_UTC);
-    return ts.tv_sec + ts.tv_nsec / 1e9;
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+    ULARGE_INTEGER uli;
+    uli.LowPart = ft.dwLowDateTime;
+    uli.HighPart = ft.dwHighDateTime;
+    const unsigned __int64 EPOCH_DIFF = 116444736000000000ULL;
+    return (double)(uli.QuadPart - EPOCH_DIFF) / 10000000.0;
 #else
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
@@ -88,17 +92,24 @@ const char *z_get_temp_dir(void)
         return tmp;
     }
 
-    if (GetTempPathA(sizeof(tmp), tmp))
+    DWORD len = GetTempPathA(sizeof(tmp), tmp);
+    if (len > 0 && len < sizeof(tmp))
     {
-        // Remove trailing backslash if present
-        int len = strlen(tmp);
-        if (len > 0 && tmp[len - 1] == '\\')
+        for (DWORD i = 0; i < len; i++)
+        {
+            if (tmp[i] == '\\')
+            {
+                tmp[i] = '/';
+            }
+        }
+
+        if (len > 0 && tmp[len - 1] == '/')
         {
             tmp[len - 1] = 0;
         }
         return tmp;
     }
-    return "C:\\Windows\\Temp";
+    return "C:/Windows/Temp";
 #else
     return "/tmp";
 #endif
@@ -183,5 +194,48 @@ const char *z_get_system_name(void)
     return "macos";
 #else
     return "linux";
+#endif
+}
+
+FILE *z_tmpfile(void)
+{
+#ifdef _WIN32
+    char temp_path[MAX_PATH_SIZE];
+    char temp_file[MAX_PATH_SIZE];
+
+    if (!GetTempPathA(MAX_PATH_SIZE, temp_path))
+    {
+        return NULL;
+    }
+
+    if (!GetTempFileNameA(temp_path, "zc", 0, temp_file))
+    {
+        return NULL;
+    }
+
+    HANDLE h = CreateFileA(temp_file, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+                           FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
+
+    if (h == INVALID_HANDLE_VALUE)
+    {
+        return NULL;
+    }
+
+    int fd = _open_osfhandle((intptr_t)h, 0);
+    if (fd == -1)
+    {
+        CloseHandle(h);
+        return NULL;
+    }
+
+    FILE *f = _fdopen(fd, "w+b");
+    if (!f)
+    {
+        _close(fd);
+        return NULL;
+    }
+    return f;
+#else
+    return tmpfile();
 #endif
 }

@@ -23,7 +23,11 @@ endif
 GIT_VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.1.0")
 CFLAGS = -Wall -Wextra -g -I./src -I./src/ast -I./src/parser -I./src/codegen -I./plugins -I./src/zen -I./src/utils -I./src/lexer -I./src/analysis -I./src/lsp -I./src/diagnostics -I./std/third-party/tre/include -DZEN_VERSION=\"$(GIT_VERSION)\" -DZEN_SHARE_DIR=\"$(SHAREDIR)\"
 TARGET = zc$(EXE)
-LIBS = -lm -lpthread -ldl
+ifeq ($(OS),Windows_NT)
+    LIBS = -lws2_32
+else
+    LIBS = -lm -lpthread -ldl
+endif
 
 SRCS = src/main.c \
        src/parser/parser_core.c \
