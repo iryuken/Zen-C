@@ -144,6 +144,41 @@ static void check_assignment_condition(ASTNode *cond)
     }
 }
 
+static char *normalize_raw_content(const char *content)
+{
+    if (!content)
+    {
+        return NULL;
+    }
+
+    size_t len = strlen(content);
+    char *normalized = xmalloc(len + 1);
+    char *d = normalized;
+    const char *s = content;
+
+    while (*s)
+    {
+        if (*s == '\r')
+        {
+            // Skip \r, we only want \n
+            if (*(s + 1) == '\n')
+            {
+                s++;
+                continue;
+            }
+            // Bare \r -> \n
+            *d++ = '\n';
+            s++;
+        }
+        else
+        {
+            *d++ = *s++;
+        }
+    }
+    *d = '\0';
+    return normalized;
+}
+
 ASTNode *parse_match(ParserContext *ctx, Lexer *l)
 {
     init_builtins();
@@ -2388,7 +2423,8 @@ ASTNode *parse_statement(ParserContext *ctx, Lexer *l)
             content[len] = 0;
 
             ASTNode *s = ast_create(NODE_RAW_STMT);
-            s->raw_stmt.content = content;
+            s->raw_stmt.content = normalize_raw_content(content);
+            free(content);
             return s;
         }
 
