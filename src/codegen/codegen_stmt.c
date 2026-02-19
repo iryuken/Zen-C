@@ -150,11 +150,10 @@ static void emit_pattern_condition(ParserContext *ctx, const char *pattern, int 
 }
 
 // Helper
-static bool is_integer_type(TypeKind k)
+static bool is_int_type(TypeKind k)
 {
     switch (k)
     {
-        case TYPE_BOOL:
         case TYPE_CHAR:
         case TYPE_I8:
         case TYPE_U8:
@@ -1021,7 +1020,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
                     {
                         fprintf(out, " = {0}");
                     }
-                    else if (is_integer_type(k))
+                    else if (is_int_type(k))
                     {
                         fprintf(out, " = 0");
                     }
@@ -1033,9 +1032,9 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
                     {
                         fprintf(out, " = 0.0");
                     }
-                    else if (k == TYPE_POINTER)
+                    else if (k == TYPE_BOOL)
                     {
-                        fprintf(out, " = NULL");
+                        fprintf(out, " = false");
                     }
                 }
                 fprintf(out, ";\n");
